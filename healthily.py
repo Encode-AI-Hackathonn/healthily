@@ -2,9 +2,7 @@ import requests
 
 url = "https://portal.your.md/v4/chat"
 
-payload = { 
-    "message": "hello!", 
-    "conversation_id": "0"
+payload = {
 }
 
 headers = {
