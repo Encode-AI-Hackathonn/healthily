@@ -3,28 +3,27 @@ import sys
 from os import getenv, environ
 from dotenv import find_dotenv, load_dotenv, set_key
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 # Bearer
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/api',methods = ['POST'])
 def api():
     assert request.method == 'POST'
-    answer = request.form['answer']
-    conversation_id = request.form['cid']
+    answer = request.json['answer']
+    conversation_id = request.json['cid']
 
     # using the answer to get the next question
     if conversation_id != "": # I have responded with an answer
         payload = {
-            "answer": {
-                
-            },
+            "answer": answer,
             "conversation": {
                 "id": conversation_id
             }
         }
-        payload["answer"] = answer
     else:
         payload = {}
 
@@ -277,7 +276,7 @@ if __name__ == "__main__":
     hm.ensure_login()
 
     if run_server:
-        app.run(debug = True)
+        app.run(debug = True, host="0.0.0.0", port=7777)
     else:
         hm.chat()
     
