@@ -1,4 +1,5 @@
 import requests
+import sys
 from os import getenv, environ
 from dotenv import find_dotenv, load_dotenv, set_key
 from flask import Flask, jsonify, request
@@ -6,6 +7,39 @@ from flask import Flask, jsonify, request
 # Bearer
 
 app = Flask(__name__)
+
+@app.route('/api',methods = ['POST'])
+def api():
+    assert request.method == 'POST'
+    answer = request.form['answer']
+    conversation_id = request.form['cid']
+
+    # using the answer to get the next question
+    if conversation_id != "": # I have responded with an answer
+        payload = {
+            "answer": {
+                
+            },
+            "conversation": {
+                "id": conversation_id
+            }
+        }
+        payload["answer"] = answer
+    else:
+        payload = {}
+
+    response = requests.post(
+        HealthilyManager.chat_url, 
+        headers=HealthilyManager.session_headers(), 
+        json=payload
+    )
+    assert response.status_code == 200
+    response_json = response.json()
+    conversation_id = response_json["conversation"]["id"]
+
+    return jsonify(
+        {'cid': conversation_id, 'question': response_json['question']}
+    )
 
 class HealthilyManager:
     base_url = "https://portal.your.md/v4"
@@ -235,10 +269,17 @@ class HealthilyManager:
 
 
 if __name__ == "__main__":
+    run_server = len(sys.argv) > 1
+
     dotenv_file = find_dotenv()
     load_dotenv(dotenv_file)
     hm = HealthilyManager(dotenv_file)
     hm.ensure_login()
-    hm.chat()
+
+    if run_server:
+        app.run(debug = True)
+    else:
+        hm.chat()
+    
     hm.search_service('Birmingham')
     
