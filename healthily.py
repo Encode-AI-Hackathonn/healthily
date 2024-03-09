@@ -1,8 +1,11 @@
 import requests
 from os import getenv, environ
 from dotenv import find_dotenv, load_dotenv, set_key
+from flask import Flask, jsonify, request
 
 # Bearer
+
+app = Flask(__name__)
 
 class HealthilyManager:
     base_url = "https://portal.your.md/v4"
