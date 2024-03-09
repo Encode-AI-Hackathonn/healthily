@@ -18,6 +18,14 @@ class HealthilyManager:
         }
 
     @staticmethod
+    def search_headers():
+        return {
+            "accept": "application/json",
+            "authorization": f"Bearer {getenv('HEALTHILY_ACCESS')}",
+            "x-api-key": f"{getenv('HEALTHILY_KEY')}"
+        }
+
+    @staticmethod
     def session_headers():
         return HealthilyManager.auth_headers(getenv('HEALTHILY_ACCESS'), "Bearer ")
 
@@ -91,8 +99,11 @@ class HealthilyManager:
                 # continue conversation
                 self.conversation_id = conversation["id"]
                 if 'report' in response_json.keys():
-                    print('Possible Cause:', response_json['report']['summary']["articles_v3"][0]['name'])
-                    print('Probability', response_json['report']['summary']["articles_v3"][0]['condition']['probalility'])
+                    self.cause = response_json['report']['summary']["articles_v3"][0]['name']
+                    self.cause_prob =response_json['report']['summary']["articles_v3"][0]['condition']['probalility']
+                    print('Possible Cause:', self.cause)
+                    print('Probability', self.cause_prob)
+                    chatting = False
 
                 response = self.respond_question(question)
             
@@ -113,19 +124,19 @@ class HealthilyManager:
         }
 
     def find_symptom(self, symptom):
-        response = requests.post(
-            'https://portal.your.md/v4/search/symptoms', 
-            headers=HealthilyManager.session_headers(), 
-            json={'text': symptom}
+        response = requests.get(
+            'https://portal.your.md/v4/search/symptoms'+'?text='+symptom, 
+            headers=HealthilyManager.search_headers()
         )
-        print(response.text)
         for s in response.json()['autocomplete']:
             selected = []
             print(s['user_facing_name'])
             selection = input()
             if selection == 'YES':
                 selected.append(s['id'])
-        return selected
+        if len(selected) <= 3:
+            return selected
+        else: print('Too many symptoms selected, max is 3')
 
 
     def respond_question(self, question):
@@ -151,7 +162,7 @@ class HealthilyManager:
     
         if question_type == "name":
             name = input()
-            payload["answer"]["value"] = name
+            payload["answer"]["value"] = name.upper()
         elif question_type == "sex":
             print("choose betweeen MALE and FEMALE")
             gender = input()
@@ -169,7 +180,7 @@ class HealthilyManager:
             for choice in question['choices']:
                 print(choice['label'])
                 selection = input()
-                if selection == 'YES':
+                if selection.upper() == 'YES':
                     included.append(str(choice['id']))
                     if question['multiple'] == 'false': break
             payload["answer"]["input"] = {}
@@ -198,10 +209,33 @@ class HealthilyManager:
 
 
 
+    def get_NHS_header():
+        return {
+        'Content-Type': 'application/json',
+        "subscription-key": f"{getenv('NHS_PK')}"
+    }
+
+    def search_service(self, loc_or_code):
+        location = requests.post(
+            'https://api.nhs.uk/service-search/search-postcode-or-place?api-version=1&search='+loc_or_code,
+            headers=get_NHS_header())
+        
+        cause = requests.get(
+            'https://api.nhs.uk/service-search?api-version=2&search='+self.cause,
+            headers=get_NHS_header())
+        
+        print('Location',location)
+        print('Cause',cause)
+
+
+
+
+
 if __name__ == "__main__":
     dotenv_file = find_dotenv()
     load_dotenv(dotenv_file)
     hm = HealthilyManager(dotenv_file)
     hm.ensure_login()
     hm.chat()
+    hm.search_service('Birmingham')
     
