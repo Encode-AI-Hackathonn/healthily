@@ -245,41 +245,18 @@ class HealthilyManager:
         return response
 
 
-
-    def get_NHS_header():
-        return {
-        'Content-Type': 'application/json',
-        "subscription-key": f"{getenv('NHS_PK')}"
-    }
-
-    def search_service(self, loc_or_code):
-        location = requests.post(
-            'https://api.nhs.uk/service-search/search-postcode-or-place?api-version=1&search='+loc_or_code,
-            headers=self.get_NHS_header())
-        
-        cause = requests.get(
-            'https://api.nhs.uk/service-search?api-version=2&search='+self.cause,
-            headers=self.get_NHS_header())
-        
-        print('Location',location)
-        print('Cause',cause)
-
-
-
-
-
 if __name__ == "__main__":
-    run_server = len(sys.argv) > 1
+    # run_server = len(sys.argv) > 1
 
     dotenv_file = find_dotenv()
     load_dotenv(dotenv_file)
     hm = HealthilyManager(dotenv_file)
     hm.ensure_login()
 
-    if run_server:
-        app.run(debug = True)
-    else:
-        hm.chat()
+    # if run_server:
+    #     app.run(debug = True)
+    # else:
+    hm.chat()
     
     hm.search_service('Birmingham')
     
