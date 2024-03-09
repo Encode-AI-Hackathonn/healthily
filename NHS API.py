@@ -15,6 +15,7 @@
 import requests
 from os import getenv, environ
 from dotenv import find_dotenv, load_dotenv, set_key
+import haversine as hs
 
 
 def get_NHS_header():
@@ -30,7 +31,8 @@ def search_service(cause, lgt, ltn):
     parameters = {
         'api-version' : 2,
         'search' : cause,
-        '$orderby' : f"geo.distance(Geocode, geography'POINT({lgt} {ltn})')"
+        '$orderby' : f"geo.distance(Geocode, geography'POINT({lgt} {ltn})')",
+        '$top' : 5
     }
 
     request = requests.get(
@@ -41,10 +43,19 @@ def search_service(cause, lgt, ltn):
     suggested_structures = []
     request_json = request.json()
     for org in request_json['value']:
+        organization = {'Services' : []}
+        organization['OrganisationName'] = org['OrganisationName']
+        organization["Address"] = " ".join([org['Address1'],org['Address2'],org['Address3'],org['City']])
+        organization['Distance'] = str(round(hs.haversine(org['Geocode']['coordinates'], (lgt,ltn)), 2))+'km'
         for service in org['Services']:
             if cause.lower() in service['ServiceName'].lower():
-                suggested_structures.append(org)
+                if service['ServiceName'] not in organization['Services']:
+                    organization['Services'].append(service['ServiceName'])
+                suggested_structures.append(organization)
+                break
 
     return suggested_structures
 
-print(search_service('covid', -2.00421, 55.77027))
+suggested_structures = search_service('covid', -2.00421, 55.77027)
+for org in suggested_structures:
+    print(org)
