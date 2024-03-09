@@ -72,7 +72,7 @@ class HealthilyManager:
         if response.status_code == 200:
             response_json = response.json()
             set_key(self.dotenv_file, "HEALTHILY_ACCESS", response_json["access_token"])
-            environ["HEALTHILY_ACCESS"] = response_json["access_token"]
+            load_dotenv(self.dotenv_file)
             print("Success: Logged in with new access token")
             return True
         else:
