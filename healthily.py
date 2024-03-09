@@ -218,11 +218,11 @@ class HealthilyManager:
     def search_service(self, loc_or_code):
         location = requests.post(
             'https://api.nhs.uk/service-search/search-postcode-or-place?api-version=1&search='+loc_or_code,
-            headers=get_NHS_header())
+            headers=self.get_NHS_header())
         
         cause = requests.get(
             'https://api.nhs.uk/service-search?api-version=2&search='+self.cause,
-            headers=get_NHS_header())
+            headers=self.get_NHS_header())
         
         print('Location',location)
         print('Cause',cause)

@@ -13,21 +13,32 @@
 # print(response.text)
 
 import requests
+from os import getenv, environ
+from dotenv import find_dotenv, load_dotenv, set_key
 
-headers={
+def get_NHS_header():
+        return {
         'Content-Type': 'application/json',
-        "subscription-key": '679bdfc8c0b5491bacb0eb9a3d96bb5a'
+        "subscription-key": f"{getenv('NHS_PK')}"
     }
 
-response = requests.post(
-    'https://api.nhs.uk/service-search/search-postcode-or-place?api-version=1&search=Birmingham',
-    headers=headers,
-    data=u'''
-{
-    "top": 25,
-    "skip": 0,
-    "count": true
-}
-    ''', )
+def search_service(cause, loc_or_code):
+    location = requests.post(
+        'https://api.nhs.uk/service-search/search-postcode-or-place?api-version=1&search=Birmingham',
+        headers=get_NHS_header(),
+        data=u'''
+    {
+        "top": 25,
+        "skip": 0,
+        "count": true
+    }
+        ''', )
+    
+    causation = requests.get(
+        'https://api.nhs.uk/service-search?api-version=2&search='+cause,
+        headers=get_NHS_header())
+    
+    print('Location',location.text)
+    print('Cause',causation.text)
 
-print(response.text)
+search_service('covid', 'B15 2QU')
