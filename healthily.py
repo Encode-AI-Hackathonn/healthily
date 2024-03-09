@@ -103,6 +103,13 @@ class HealthilyManager:
             }
         }
 
+    def find_synthom(self, symptom):
+        response = requests.post(
+            'https://portal.your.md/v4/search/symptoms', 
+            headers=HealthilyManager.session_headers(), 
+            json={'text': symptom}
+        )
+
     def respond_question(self, question):
         question_type = question["type"]
         # base payload
@@ -117,7 +124,7 @@ class HealthilyManager:
             name = input()
             payload["answer"]["value"] = name
         elif question_type == "sex":
-            # "MALE" or "FEMALE"
+            print("choose betweeen MALE and FEMALE")
             gender = input()
             payload["answer"]["selection"] = [gender]
         elif question_type == "year_of_birth":
@@ -129,9 +136,18 @@ class HealthilyManager:
             initial_symptoms_freetext = input()
             payload["answer"]["value"] = initial_symptoms_freetext
         elif question_type == "generic":
-            pass
-        elif question_type == "autocomplete":
-            pass
+            included = []
+            for choice in question['choices']:
+                print(choice['label'])
+                selection = input()
+                if selection == 'YES':
+                    included.append(str(choice['id']))
+            payload["answer"]["input"] = {}
+            payload["answer"]["input"]['include'] = included
+            print(payload)
+
+        # elif question_type == "autocomplete":
+        #     pass
             
         else:
             raise NotImplementedError()
