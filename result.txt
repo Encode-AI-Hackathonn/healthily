@@ -1,0 +1,6 @@
+{
+    "error": {
+        "code": "",
+        "message": "Invalid expression: Syntax error at position 27 in ''OrganisationName' contains 'WELL''.\r\nParameter name: $filter"
+    }
+}

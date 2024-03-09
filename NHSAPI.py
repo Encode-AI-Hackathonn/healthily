@@ -13,14 +13,16 @@
 # print(response.text)
 
 import requests
-from os import getenv, environ
-from dotenv import find_dotenv, load_dotenv, set_key
+import os
+import json
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def get_NHS_header():
         return {
         'Content-Type': 'application/json',
-        "subscription-key": f"{getenv('NHS_PK')}"
+        "subscription-key": f"{os.getenv('NHS_PK')}"
     }
 
 def search_service(cause, lgt, ltn):
@@ -29,22 +31,31 @@ def search_service(cause, lgt, ltn):
 
     parameters = {
         'api-version' : 2,
-        'search' : cause,
-        '$orderby' : f"geo.distance(Geocode, geography'POINT({lgt} {ltn})')"
+        #'search' : cause,
+        '$orderby' : f"geo.distance(Geocode, geography'POINT({lgt} {ltn})')",
+        '$filter' : "'OrganisationName' contains 'WELL'"
     }
 
     request = requests.get(
         nhs_url,
         headers=get_NHS_header(),
         params=parameters)
+    print(request.status_code)
     
     suggested_structures = []
     request_json = request.json()
-    for org in request_json['value']:
-        for service in org['Services']:
-            if cause.lower() in service['ServiceName'].lower():
-                suggested_structures.append(org)
+    with open('result.txt', 'w') as f:
+        f.write(json.dumps(request_json, indent=4))
 
-    return suggested_structures
+#     for org in request_json['value']:
+#         for service in org['Services']:
+#             if cause.lower() in service['ServiceName'].lower():
+#                 suggested_structures.append(org)
+#                 break
 
-print(search_service('covid', -2.00421, 55.77027))
+#     return suggested_structures
+
+search_service('covid', -2.00421, 55.77027)
+
+# for item in structures:
+#     print(item['OrganisationName'])
