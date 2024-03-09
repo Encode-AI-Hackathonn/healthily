@@ -83,14 +83,23 @@ class HealthilyManager:
 
         while (chatting):
             response_json = response.json()
-            print(response.text)
-            conversation = response_json["conversation"]
-            question = response_json["question"]
-            user = response_json["user"]
-            # continue conversation
-            self.conversation_id = conversation["id"]
-        
-            response = self.respond_question(question)
+            # print(response.text)
+            try:
+                conversation = response_json["conversation"]
+                question = response_json["question"]
+                user = response_json["user"]
+                # continue conversation
+                self.conversation_id = conversation["id"]
+                if 'report' in response_json.keys():
+                    print('Possible Cause:', response_json['report']['summary']["articles_v3"][0]['name'])
+                    print('Probability', response_json['report']['summary']["articles_v3"][0]['condition']['probalility'])
+
+                response = self.respond_question(question)
+            
+            except:
+                'An Error Occurred'
+
+            
         
         
     def base_resp(self):
@@ -103,12 +112,21 @@ class HealthilyManager:
             }
         }
 
-    def find_synthom(self, symptom):
+    def find_symptom(self, symptom):
         response = requests.post(
             'https://portal.your.md/v4/search/symptoms', 
             headers=HealthilyManager.session_headers(), 
             json={'text': symptom}
         )
+        print(response.text)
+        for s in response.json()['autocomplete']:
+            selected = []
+            print(s['user_facing_name'])
+            selection = input()
+            if selection == 'YES':
+                selected.append(s['id'])
+        return selected
+
 
     def respond_question(self, question):
         question_type = question["type"]
@@ -116,6 +134,17 @@ class HealthilyManager:
         payload = self.base_resp()
         # response matches question
         payload["answer"]["type"] = question_type
+
+        def selection(label):
+            selected = []
+            for choice in question['choices']:
+                print(choice[label])
+                selection = input()
+                if selection == 'YES':
+                    selected.append(choice['id'])
+            payload['answer']['selection'] = selected
+            return payload
+
         # prompts as per
         for msg in question["messages"]:
             print(msg["value"] if "value" in msg else msg["text"])
@@ -142,12 +171,16 @@ class HealthilyManager:
                 selection = input()
                 if selection == 'YES':
                     included.append(str(choice['id']))
+                    if question['multiple'] == 'false': break
             payload["answer"]["input"] = {}
             payload["answer"]["input"]['include'] = included
-            print(payload)
+        
+        elif question_type == "health_background": payload = selection('long_name')
+        elif question_type in ["factor", "symptom", 'symptoms']: payload = selection('text')
 
-        # elif question_type == "autocomplete":
-        #     pass
+        elif question_type == "autocomplete":
+            symptom = input()
+            payload = self.find_symptom(symptom)
             
         else:
             raise NotImplementedError()
@@ -158,9 +191,9 @@ class HealthilyManager:
             json=payload
         )
 
-        print(response.status_code)
-        print(response.text)
-        print(response.json().keys())
+        # print(response.status_code)
+        # print(response.text)
+        # print(response.json().keys())
         return response
 
 
