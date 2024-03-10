@@ -15,6 +15,38 @@
 import requests
 from os import getenv, environ
 from dotenv import find_dotenv, load_dotenv, set_key
+import haversine as hs
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+@app.route('/nhs',methods = ['POST'])
+def nhs():
+    assert request.method == 'POST'
+    cause = request.form['cause']
+    user_postcode = request.form['code']
+
+    suggested_structures = search_service(cause, user_postcode)
+
+    return jsonify(
+        suggested_structures
+    )
+
+def get_code(user_postcode):
+    
+    user_postcode_url = user_postcode.replace(' ', '%20')
+
+    postcodes_response = requests.get(f'http://api.postcodes.io/postcodes/{user_postcode_url}')
+
+    if postcodes_response.status_code == 200:
+        data = postcodes_response.json()
+        la = data['result']['latitude']
+        lg = data['result']['longitude']
+        loc = [lg, la]
+        return lg, la
+        
+    else:
+        print(postcodes_response.status_code)
 
 
 def get_NHS_header():
@@ -23,14 +55,17 @@ def get_NHS_header():
         "subscription-key": f"{getenv('NHS_PK')}"
     }
 
-def search_service(cause, lgt, ltn):
+def search_service(cause, user_postcode):
+
+    lgt, ltn = get_code(user_postcode)
 
     nhs_url = 'https://api.nhs.uk/service-search'
 
     parameters = {
         'api-version' : 2,
         'search' : cause,
-        '$orderby' : f"geo.distance(Geocode, geography'POINT({lgt} {ltn})')"
+        '$orderby' : f"geo.distance(Geocode, geography'POINT({lgt} {ltn})')",
+        '$top' : 5
     }
 
     request = requests.get(
@@ -40,11 +75,21 @@ def search_service(cause, lgt, ltn):
     
     suggested_structures = []
     request_json = request.json()
+    print(request_json)
     for org in request_json['value']:
+        organization = {'Services' : []}
+        organization['OrganisationName'] = org['OrganisationName']
+        organization["Address"] = " ".join([org['Address1'],org['Address2'],org['Address3'],org['City']])
+        organization['Distance'] = str(round(hs.haversine(org['Geocode']['coordinates'], (lgt,ltn)), 2))+'km'
         for service in org['Services']:
             if cause.lower() in service['ServiceName'].lower():
-                suggested_structures.append(org)
+                if service['ServiceName'] not in organization['Services']:
+                    organization['Services'].append(service['ServiceName'])
+                suggested_structures.append(organization)
+                break
 
     return suggested_structures
 
-print(search_service('covid', -2.00421, 55.77027))
+if __name__ == "__main__":
+    app.run(debug = True, host="0.0.0.0", port=7777)
+    # print(search_service('covid', 'B15 3TF'))
