@@ -91,5 +91,5 @@ def search_service(cause, user_postcode):
     return suggested_structures
 
 if __name__ == "__main__":
-    app.run(debug = True, host="0.0.0.0", port=7777)
+    app.run(debug = True, host="0.0.0.0", port=8888)
     # print(search_service('covid', 'B15 3TF'))
