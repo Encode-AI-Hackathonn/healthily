@@ -79,7 +79,7 @@ def search_service(cause, user_postcode):
     for org in request_json['value']:
         organization = {'Services' : []}
         organization['OrganisationName'] = org['OrganisationName']
-        organization["Address"] = " ".join([org['Address1'],org['Address2'],org['Address3'],org['City']])
+        organization["Address"] = " ".join([org['Address1'] or "", org['Address2'] or "", org['Address3'] or "", org['City']])
         organization['Distance'] = str(round(hs.haversine(org['Geocode']['coordinates'], (lgt,ltn)), 2))+'km'
         for service in org['Services']:
             if cause.lower() in service['ServiceName'].lower():
