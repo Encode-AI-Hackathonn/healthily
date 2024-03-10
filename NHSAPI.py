@@ -23,8 +23,8 @@ app = Flask(__name__)
 @app.route('/nhs',methods = ['POST'])
 def nhs():
     assert request.method == 'POST'
-    cause = request.form['cause']
-    user_postcode = request.form['code']
+    cause = request.json['cause']
+    user_postcode = request.json['code']
 
     suggested_structures = search_service(cause, user_postcode)
 
