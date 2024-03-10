@@ -36,8 +36,11 @@ def api():
     response_json = response.json()
     conversation_id = response_json["conversation"]["id"]
 
+    next_question_obj = {'cid': conversation_id, 'question': response_json['question']}
+    if "report" in response_json:
+        next_question_obj["report"] = response_json["report"]
     return jsonify(
-        {'cid': conversation_id, 'question': response_json['question']}
+       next_question_obj
     )
 
 class HealthilyManager:
