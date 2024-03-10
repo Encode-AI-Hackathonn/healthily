@@ -3,28 +3,27 @@ import sys
 from os import getenv, environ
 from dotenv import find_dotenv, load_dotenv, set_key
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 # Bearer
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/api',methods = ['POST'])
 def api():
     assert request.method == 'POST'
-    answer = request.form['answer']
-    conversation_id = request.form['cid']
+    answer = request.json['answer']
+    conversation_id = request.json['cid']
 
     # using the answer to get the next question
     if conversation_id != "": # I have responded with an answer
         payload = {
-            "answer": {
-                
-            },
+            "answer": answer,
             "conversation": {
                 "id": conversation_id
             }
         }
-        payload["answer"] = answer
     else:
         payload = {}
 
@@ -37,8 +36,11 @@ def api():
     response_json = response.json()
     conversation_id = response_json["conversation"]["id"]
 
+    next_question_obj = {'cid': conversation_id, 'question': response_json['question']}
+    if "report" in response_json:
+        next_question_obj["report"] = response_json["report"]
     return jsonify(
-        {'cid': conversation_id, 'question': response_json['question']}
+       next_question_obj
     )
 
 class HealthilyManager:
@@ -246,17 +248,18 @@ class HealthilyManager:
 
 
 if __name__ == "__main__":
-    # run_server = len(sys.argv) > 1
+    run_server = len(sys.argv) > 1
 
     dotenv_file = find_dotenv()
     load_dotenv(dotenv_file)
     hm = HealthilyManager(dotenv_file)
     hm.ensure_login()
 
-    # if run_server:
-    #     app.run(debug = True)
-    # else:
-    hm.chat()
+    if run_server:
+        app.run(debug = True, host="0.0.0.0", port=7777)
+    else:
+        hm.chat()
+
     
     hm.search_service('Birmingham')
     
