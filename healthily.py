@@ -128,7 +128,7 @@ class HealthilyManager:
 
         while (chatting):
             response_json = response.json()
-            # print(response.text)
+            print(response.text)
             try:
                 conversation = response_json["conversation"]
                 question = response_json["question"]
