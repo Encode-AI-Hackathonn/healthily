@@ -23,8 +23,8 @@ app = Flask(__name__)
 @app.route('/nhs',methods = ['POST'])
 def nhs():
     assert request.method == 'POST'
-    cause = request.form['cause']
-    user_postcode = request.form['code']
+    cause = request.json['cause']
+    user_postcode = request.json['code']
 
     suggested_structures = search_service(cause, user_postcode)
 
@@ -91,5 +91,5 @@ def search_service(cause, user_postcode):
     return suggested_structures
 
 if __name__ == "__main__":
-    app.run(debug = True, host="0.0.0.0", port=7777)
+    app.run(debug = True, host="0.0.0.0", port=8888)
     # print(search_service('covid', 'B15 3TF'))
